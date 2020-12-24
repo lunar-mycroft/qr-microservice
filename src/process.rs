@@ -1,18 +1,20 @@
-use actix_web::HttpResponse;
 use actix_web::web::Bytes;
+use actix_web::HttpResponse;
 use image::Luma;
 use qrcode::render::svg;
 use qrcode::QrCode;
 use serde::Deserialize;
 
-fn default_ec()->char {'m'}
+fn default_ec() -> char {
+    'm'
+}
 
 #[derive(Deserialize, Debug)]
 pub struct Request {
     b64: Option<String>,
     plain: Option<String>,
 
-    #[serde(default="default_ec")]
+    #[serde(default = "default_ec")]
     ec: char,
     #[serde(default)]
     fmt: Format,
@@ -23,11 +25,11 @@ pub enum Error {
     Base64(base64::DecodeError),
     QR(qrcode::types::QrError),
     MultipleFormats,
-    UnsuportedFormat(String),
+    UnsuportedFormat,
     NoData,
     ImageProcessing(image::ImageError),
     ReadError(std::io::Error),
-    BadErrorCorrection(char)
+    BadErrorCorrection(char),
 }
 
 #[derive(Deserialize, Debug)]
@@ -45,29 +47,24 @@ impl Default for Format {
 impl Request {
     pub fn response(&self, temp_path: &String) -> Result<HttpResponse, Error> {
         let code = self.code()?;
-        Ok(match self.fmt {
+        match self.fmt {
             Format::svg => {
                 let svg_xml = code.render::<svg::Color>().build();
-                HttpResponse::Ok()
+                Ok(HttpResponse::Ok()
                     .content_type("image/svg+xml")
-                    .body(svg_xml)
+                    .body(svg_xml))
             }
             Format::png => {
                 let path = format!("{}{}.png", temp_path, self.base64());
                 self.make_tmp(&code, &path)?;
                 let img_data = self.load_tmp(&path)?;
 
-                HttpResponse::InternalServerError()
+                Ok(HttpResponse::InternalServerError()
                     .content_type("image/png")
-                    .body(Bytes::from(img_data))
+                    .body(Bytes::from(img_data)))
             }
-            _ => HttpResponse::InternalServerError()
-                .content_type("text/plain")
-                .body(format!(
-                    "Failed to render because the format \"{:?}\" is unsupported",
-                    self.fmt
-                )),
-        })
+            _ =>Err(Error::UnsuportedFormat),
+        }
     }
 
     fn code(&self) -> Result<QrCode, Error> {
@@ -84,13 +81,13 @@ impl Request {
         }
     }
 
-    fn ecl(&self)->Result<qrcode::EcLevel, Error>{
+    fn ecl(&self) -> Result<qrcode::EcLevel, Error> {
         match self.ec {
-            'l'|'L' => Ok(qrcode::EcLevel::L),
-            'm'|'M' => Ok(qrcode::EcLevel::M),
-            'q'|'Q' => Ok(qrcode::EcLevel::Q),
-            'h'|'H' => Ok(qrcode::EcLevel::H),
-            _ => Err(Error::BadErrorCorrection(self.ec))
+            'l' | 'L' => Ok(qrcode::EcLevel::L),
+            'm' | 'M' => Ok(qrcode::EcLevel::M),
+            'q' | 'Q' => Ok(qrcode::EcLevel::Q),
+            'h' | 'H' => Ok(qrcode::EcLevel::H),
+            _ => Err(Error::BadErrorCorrection(self.ec)),
         }
     }
 
@@ -110,7 +107,6 @@ impl Request {
         std::fs::remove_file(path)?;
         Ok(res)
     }
-
 }
 
 impl Error {
