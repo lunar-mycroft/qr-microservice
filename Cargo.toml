@@ -1,0 +1,15 @@
+[package]
+name = "qr-microservice"
+version = "0.1.0"
+authors = ["lunar-mycroft <lunar-mycroft@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "3.3.2"
+base64 = "0.13.0"
+image = "0.23.12"
+qrcode = "0.12.0"
+serde = "1.0.118"
+ron = "0.6.4"

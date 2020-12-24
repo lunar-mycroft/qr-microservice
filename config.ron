@@ -1,0 +1,4 @@
+(
+    port: 6201,
+    temp_path: "C:\\Users\\timothy\\Programming\\webdev\\qr-microservice\\tmp\\"
+)
