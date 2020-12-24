@@ -9,14 +9,14 @@ use process::Request;
 
 #[derive(Debug, Deserialize)]
 struct Config{
-    port: u16,
-    temp_path: String
+    pub port: u16,
+    pub temp_path: String
 }
 
 #[get("/")]
 async fn make(data: web::Query<Request>, state: web::Data<Arc<Config>>) -> impl Responder {
-    println!("{:?}", state);
-    match data.response(){
+    let config = &*state;
+    match data.response(&config.temp_path){
         Ok(r)=>r,
         Err(e)=>e.render()
     }
@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
     println!("Running server on 127.0.0.1:6201");
 
     HttpServer::new(move || App::new()
-        //.data(config)
+        .data(Arc::clone(&config))
         .service(make))
         .bind("127.0.0.1:6201")?
         .run()

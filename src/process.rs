@@ -43,7 +43,7 @@ impl Default for Format {
 }
 
 impl Request {
-    pub fn response(&self) -> Result<HttpResponse, Error> {
+    pub fn response(&self, temp_path: &String) -> Result<HttpResponse, Error> {
         let code = self.code()?;
         Ok(match self.fmt {
             Format::svg => {
@@ -53,11 +53,7 @@ impl Request {
                     .body(svg_xml)
             }
             Format::png => {
-                let path = if cfg!(windows) {
-                    format!(".\\tmp\\{}.png", self.base64())
-                } else {
-                    format!("./tmp/{}.png", self.base64())
-                };
+                let path = format!("{}{}.png", temp_path, self.base64());
                 self.make_tmp(&code, &path)?;
                 let img_data = self.load_tmp(&path)?;
 
